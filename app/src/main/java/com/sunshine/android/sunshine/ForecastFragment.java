@@ -93,7 +93,7 @@ public class ForecastFragment extends Fragment {
                                 .appendQueryParameter("q", params[0])
                                 .appendQueryParameter("mode", "json")
                                 .appendQueryParameter("units", params[1])
-                                .appendQueryParameter("cnt", "16")
+                                .appendQueryParameter("cnt", "7")
                                 .appendQueryParameter("APPID", BuildConfig.OPEN_WEATHER_MAP_API_KEY)
                                 .build().toString()
                         ).openConnection();
