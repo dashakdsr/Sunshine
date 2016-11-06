@@ -1,17 +1,18 @@
-package com.sunshine.android.sunshine.app;
+package com.android.sunshine;
 
 import android.app.Fragment;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -25,8 +26,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Locale;
 
 public class ForecastFragment extends Fragment {
@@ -36,50 +35,47 @@ public class ForecastFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View list_view = inflater.inflate(R.layout.fragment_main, container, false);
-        String[] data = {
-                "Mon - Sunny - 31/17",
-                "Tue - Foggy - 21/8",
-                "Wed - Cloudy - 22/17",
-                "Thurs - Rainy - 18/11",
-                "Fri - Foggy - 21/10",
-                "Sat - TRAPPED IN WEATHERSTATION - 23/18",
-                "Sun - Sunny - 20/7"
-        };
-
-        forecastAdapter = new ArrayAdapter<>(getActivity(), R.layout.list_item_forecast, new ArrayList<>(Arrays.asList(data)));
-
-        ((ListView) list_view.findViewById(R.id.listview_forecast))
-                .setAdapter(forecastAdapter);
-        return list_view;
+        super.onCreateView(inflater, container, savedInstanceState);
+        return inflater.inflate(R.layout.fragment_forecast, container, false);
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.forecast, menu);
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        forecastAdapter = new ArrayAdapter<>(getActivity(), R.layout.list_item_forecast);
+        ListView listView = (ListView) view.findViewById(R.id.list_view_forecast);
+        listView.setAdapter(forecastAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                startActivity(new Intent(getActivity(), DetailActivity.class)
+                        .putExtra("main data", forecastAdapter.getItem(i)));
+            }
+        });
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_refresh:
-                new ForecastUpdateTask()
-                        .execute("3389339");
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+    public void onResume() {
+        super.onResume();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        new ForecastUpdateTask().execute(
+                sharedPreferences.getString(
+                        getString(R.string.pref_location_key),
+                        getString(R.string.pref_location_default)),
+                sharedPreferences.getString(getString(
+                        R.string.pref_units_of_temp_key),
+                        getString(R.string.pref_units_of_temp_default)));
     }
 
     public class ForecastUpdateTask extends AsyncTask<String, Void, String[]> {
 
-        final private String LOG_TAG = ForecastUpdateTask.class.getSimpleName();
+        final private String LOG_SPAWNER = ForecastUpdateTask.class.getSimpleName();
 
         @Override
         protected String[] doInBackground(String... params) {
@@ -94,10 +90,10 @@ public class ForecastFragment extends Fragment {
             try {
                 urlConnection = (HttpURLConnection)
                         new URL(Uri.parse("http://api.openweathermap.org/data/2.5/forecast/daily?").buildUpon()
-                                .appendQueryParameter("id", params[0])
+                                .appendQueryParameter("q", params[0])
                                 .appendQueryParameter("mode", "json")
-                                .appendQueryParameter("units", "metric")
-                                .appendQueryParameter("cnt", "7")
+                                .appendQueryParameter("units", params[1])
+                                .appendQueryParameter("cnt", "16")
                                 .appendQueryParameter("APPID", BuildConfig.OPEN_WEATHER_MAP_API_KEY)
                                 .build().toString()
                         ).openConnection();
@@ -117,7 +113,7 @@ public class ForecastFragment extends Fragment {
                 }
                 forecastJsonResponse = buffer.toString();
             } catch (IOException e) {
-                Log.e(LOG_TAG, "error", e);
+                Log.e(LOG_SPAWNER, "error", e);
                 return null;
             } finally {
                 if (urlConnection != null) {
@@ -127,20 +123,20 @@ public class ForecastFragment extends Fragment {
                     try {
                         reader.close();
                     } catch (IOException e) {
-                        Log.e(LOG_TAG, "error", e);
+                        Log.e(LOG_SPAWNER, "error", e);
                     }
                 }
             }
             try {
                 return getForecastDataFromJSON(forecastJsonResponse);
             } catch (JSONException e) {
-                Log.e(LOG_TAG, "error", e);
+                Log.e(LOG_SPAWNER, "error", e);
             }
             return null;
         }
 
         private String[] getForecastDataFromJSON(String data)
-                throws JSONException    {
+                throws JSONException {
 
             JSONObject forecastJson = new JSONObject(data);
 

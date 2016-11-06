@@ -4,7 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity">
     <item
-        android:id="@+id/menu_refresh"
-        android:title="@string/menu_refresh"
+        android:id="@+id/menu_show_on_map"
+        android:title="@string/show_on_map"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_settings"
+        android:title="@string/settings"
         app:showAsAction="never" />
 </menu>
