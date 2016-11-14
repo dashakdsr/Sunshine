@@ -69,8 +69,8 @@ public class ForecastFragment extends Fragment {
                         getString(R.string.pref_location_key),
                         getString(R.string.pref_location_default)),
                 sharedPreferences.getString(getString(
-                        R.string.pref_units_of_temp_key),
-                        getString(R.string.pref_units_of_temp_default)));
+                        R.string.pref_temperature_units_key),
+                        getString(R.string.pref_temperature_units_default)));
     }
 
     public class ForecastUpdateTask extends AsyncTask<String, Void, String[]> {
