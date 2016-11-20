@@ -24,10 +24,10 @@ public class DetailActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_pattern);
+        setContentView(R.layout.activity_pattern_useless);
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
-                    .replace(R.id.activity_pattern, new DetailFragment())
+                    .replace(R.id.activity_useless, new DetailFragment())
                     .commit();
         }
     }

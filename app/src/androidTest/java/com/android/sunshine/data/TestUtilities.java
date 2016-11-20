@@ -1,10 +1,8 @@
 package com.android.sunshine.data;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -92,25 +90,6 @@ public class TestUtilities extends AndroidTestCase {
         testValues.put(WeatherContract.WeatherEntry.COLUMN_PRESSURE, 2001);
 
         return testValues;
-    }
-
-    /*
-        Students: You can uncomment this function once you have finished creating the
-        LocationEntry part of the WeatherContract as well as the WeatherDbHelper.
-     */
-    static long insertNorthPoleLocationValues(Context context) {
-        // insert our test records into the database
-        WeatherDbHelper dbHelper = new WeatherDbHelper(context);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues testValues = TestUtilities.createNorthPoleLocationValues();
-
-        long locationRowId;
-        locationRowId = db.insert(WeatherContract.LocationEntry.TABLE_NAME, null, testValues);
-
-        // Verify we got a row back.
-        assertTrue("Error: Failure to insert North Pole Location Values", locationRowId != -1);
-
-        return locationRowId;
     }
 
     /*

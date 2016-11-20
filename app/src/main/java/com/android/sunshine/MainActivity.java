@@ -17,10 +17,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_pattern);
+        setContentView(R.layout.activity_pattern_useless);
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
-                    .replace(R.id.activity_pattern, new ForecastFragment())
+                    .replace(R.id.activity_useless, new ForecastFragment())
                     .commit();
         }
     }

@@ -1,4 +1,4 @@
-package com.sunshine.android.sunshine.app;
+package com.android.sunshine;
 
 import org.junit.Test;
 
