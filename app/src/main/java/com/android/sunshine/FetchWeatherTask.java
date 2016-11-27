@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.sunshine;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
 import com.android.sunshine.data.WeatherContract;
 import com.android.sunshine.data.WeatherContract.WeatherEntry;
@@ -40,23 +36,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.Vector;
 
-public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
+class FetchWeatherTask extends AsyncTask<String, Void, Void> {
 
     final private String LOG_SPAWNER = getClass().getSimpleName();
 
-    private ArrayAdapter<String> mForecastAdapter;
     private final Context mContext;
 
-    public FetchWeatherTask(Context context, ArrayAdapter<String> forecastAdapter) {
+    FetchWeatherTask(Context context) {
         this.mContext = context;
-        this.mForecastAdapter = forecastAdapter;
     }
-
-    private boolean DEBUG = true;
 
     /**
      * Helper method to handle insertion of a new location in the weather database.
@@ -74,11 +64,11 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
         Cursor locationCursor = mContext.getContentResolver().query(
                 WeatherContract.LocationEntry.CONTENT_URI,
                 new String[]{WeatherContract.LocationEntry._ID},
-                WeatherContract.LocationEntry.COLUMN_LOC_SETTING + " = ?",
+                WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ?",
                 new String[]{locationSetting},
                 null);
 
-        if (locationCursor.moveToFirst()) {
+        if (locationCursor != null && locationCursor.moveToFirst()) {
             int locationIdIndex = locationCursor.getColumnIndex(WeatherContract.LocationEntry._ID);
             locationId = locationCursor.getLong(locationIdIndex);
         } else {
@@ -88,10 +78,10 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
             // Then add the data, along with the corresponding name of the data type,
             // so the content provider knows what kind of value is being inserted.
-            locationValues.put(WeatherContract.LocationEntry.COLUMN_LOC_NAME, cityName);
-            locationValues.put(WeatherContract.LocationEntry.COLUMN_LOC_SETTING, locationSetting);
-            locationValues.put(WeatherContract.LocationEntry.COLUMN_LOC_LAT, lat);
-            locationValues.put(WeatherContract.LocationEntry.COLUMN_LOC_LON, lon);
+            locationValues.put(WeatherContract.LocationEntry.COLUMN_CITY_NAME, cityName);
+            locationValues.put(WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING, locationSetting);
+            locationValues.put(WeatherContract.LocationEntry.COLUMN_COORD_LAT, lat);
+            locationValues.put(WeatherContract.LocationEntry.COLUMN_COORD_LONG, lon);
 
             // Finally, insert location data into the database.
             Uri insertedUri = mContext.getContentResolver().insert(
@@ -103,56 +93,58 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
             locationId = ContentUris.parseId(insertedUri);
         }
 
-        locationCursor.close();
+        if (locationCursor != null) {
+            locationCursor.close();
+        }
         // Wait, that worked?  Yes!
         return locationId;
     }
 
-    String[] convertContentValuesToUXFormat(Vector<ContentValues> cvv) {
-        // return strings to keep UI functional for now
-        String[] resultStrs = new String[cvv.size()];
-        for (int i = 0; i < cvv.size(); i++) {
-            ContentValues weatherValues = cvv.elementAt(i);
-            String highAndLow = formatHighLows(
-                    weatherValues.getAsDouble(WeatherEntry.COLUMN_MAX_TEMP),
-                    weatherValues.getAsDouble(WeatherEntry.COLUMN_MIN_TEMP));
-            resultStrs[i] = new SimpleDateFormat("EEE, MMM dd", Locale.US)
-                    .format(weatherValues.getAsLong(WeatherEntry.COLUMN_DATE) * 1000)
-                    + " - " + weatherValues.getAsString(WeatherEntry.COLUMN_SHORT_DESC)
-                    + " - " + highAndLow;
-        }
-        return resultStrs;
-    }
+//    String[] convertContentValuesToUXFormat(Vector<ContentValues> cvv) {
+//        // return strings to keep UI functional for now
+//        String[] resultStrs = new String[cvv.size()];
+//        for (int i = 0; i < cvv.size(); i++) {
+//            ContentValues weatherValues = cvv.elementAt(i);
+//            String highAndLow = formatHighLows(
+//                    weatherValues.getAsDouble(WeatherEntry.COLUMN_MAX_TEMP),
+//                    weatherValues.getAsDouble(WeatherEntry.COLUMN_MIN_TEMP));
+//            resultStrs[i] = new SimpleDateFormat("EEE, MMM dd", Locale.US)
+//                    .format(weatherValues.getAsLong(WeatherEntry.COLUMN_DATE) * 1000)
+//                    + " - " + weatherValues.getAsString(WeatherEntry.COLUMN_SHORT_DESC)
+//                    + " - " + highAndLow;
+//        }
+//        return resultStrs;
+//    }
 
-    private String formatHighLows(double high, double low) {
-        // Data is fetched in Celsius by default.
-        // If user prefers to see in Fahrenheit, convert the values here.
-        // We do this rather than fetching in Fahrenheit so that the user can
-        // change this option without us having to re-fetch the data once
-        // we start storing the values in a database.
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-        String unitType = sharedPrefs.getString(
-                mContext.getString(R.string.pref_temperature_units_key),
-                mContext.getString(R.string.pref_temperature_units_default));
-
-        String[] unitsEntries = mContext.getResources().getStringArray(R.array.pref_temperature_units_entry_value);
-
-        if (unitType.equals(unitsEntries[0])) {
-            high = (high * 1.8) + 32;
-            low = (low * 1.8) + 32;
-        } else if (unitType.equals(unitsEntries[2])) {
-            high += 273.15;
-            low += 273.15;
-        } else if (!unitType.equals(unitsEntries[1])) {
-            Log.e(LOG_SPAWNER, "Unit type not found" + unitType);
-        }
-
-        // For presentation, assume the user doesn't care about tenths of a degree.
-        long roundedHigh = Math.round(high);
-        long roundedLow = Math.round(low);
-
-        return roundedHigh + "/" + roundedLow;
-    }
+//    private String formatHighLows(double high, double low) {
+//        // Data is fetched in Celsius by default.
+//        // If user prefers to see in Fahrenheit, convert the values here.
+//        // We do this rather than fetching in Fahrenheit so that the user can
+//        // change this option without us having to re-fetch the data once
+//        // we start storing the values in a database.
+//        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+//        String unitType = sharedPrefs.getString(
+//                mContext.getString(R.string.pref_temperature_units_key),
+//                mContext.getString(R.string.pref_temperature_units_default));
+//
+//        String[] unitsEntries = mContext.getResources().getStringArray(R.array.pref_temperature_units_entry_value);
+//
+//        if (unitType.equals(unitsEntries[0])) {
+//            high = (high * 1.8) + 32;
+//            low = (low * 1.8) + 32;
+//        } else if (unitType.equals(unitsEntries[2])) {
+//            high += 273.15;
+//            low += 273.15;
+//        } else if (!unitType.equals(unitsEntries[1])) {
+//            Log.e(LOG_SPAWNER, "Unit type not found" + unitType);
+//        }
+//
+//        // For presentation, assume the user doesn't care about tenths of a degree.
+//        long roundedHigh = Math.round(high);
+//        long roundedLow = Math.round(low);
+//
+//        return roundedHigh + "/" + roundedLow;
+//    }
 
     /**
      * Take the String representing the complete forecast in JSON Format and
@@ -162,8 +154,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
      * into an Object hierarchy for us.
      */
 
-    @Nullable
-    private String[] getForecastDataFromJSON(String forecastJsonStr, String locationSetting)
+    private void getForecastDataFromJSON(String forecastJsonStr, String locationSetting)
             throws JSONException {
 
         // Now we have a String representing the complete forecast in JSON Format.
@@ -215,7 +206,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
             long locationId = addLocation(locationSetting, cityName, cityLatitude, cityLongitude);
 
             // Insert the new weather information into the database
-            Vector<ContentValues> cVVector = new Vector<ContentValues>(weatherArray.length());
+            Vector<ContentValues> cVVector = new Vector<>(weatherArray.length());
 
             // OWM returns daily forecasts based upon the local time of the city that is being
             // asked for, which means that we need to know the GMT offset to translate this data
@@ -243,7 +234,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
                 JSONObject dayForecast = weatherArray.getJSONObject(i);
 
                 // Cheating to convert this to UTC time, which is what we want anyhow
-                dateTime = dayForecast.getLong(OWM_DATE);
+                dateTime = dayForecast.getLong(OWM_DATE) * 1000;
 
                 pressure = dayForecast.getDouble(OWM_PRESSURE);
                 humidity = dayForecast.getInt(OWM_HUMIDITY);
@@ -283,43 +274,19 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
             if (cVVector.size() > 0) {
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
                 cVVector.toArray(cvArray);
-                mContext.getContentResolver().bulkInsert(WeatherEntry.CONTENT_URI, cvArray);
-            }
-
-
-            // Sort order:  Ascending, by date.
-            String sortOrder = WeatherEntry.COLUMN_DATE + " ASC";
-            Uri weatherForLocationUri = WeatherEntry.buildWeatherLocationWithStartDate(
-                    locationSetting, System.currentTimeMillis());
-
-            // Students: Uncomment the next lines to display what what you stored in the bulkInsert
-
-            Cursor cur = mContext.getContentResolver().query(weatherForLocationUri,
-                    null, null, null, sortOrder);
-
-            cVVector = new Vector<ContentValues>(cur.getCount());
-            if ( cur.moveToFirst() ) {
-                do {
-                    ContentValues cv = new ContentValues();
-                    DatabaseUtils.cursorRowToContentValues(cur, cv);
-                    cVVector.add(cv);
-                } while (cur.moveToNext());
+                mContext.getContentResolver().bulkInsert(WeatherContract.WeatherEntry.CONTENT_URI, cvArray);
             }
 
             Log.d(LOG_SPAWNER, "FetchWeatherTask Complete. " + cVVector.size() + " Inserted");
-
-            String[] resultStrs = convertContentValuesToUXFormat(cVVector);
-            return resultStrs;
 
         } catch (JSONException e) {
             Log.e(LOG_SPAWNER, e.getMessage(), e);
             e.printStackTrace();
         }
-        return null;
     }
 
     @Override
-    protected String[] doInBackground(String... params) {
+    protected Void doInBackground(String... params) {
 
         // If there's no zip code, there's nothing to look up.  Verify size of params.
         if (params.length == 0) {
@@ -376,18 +343,10 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
             }
         }
         try {
-            return getForecastDataFromJSON(forecastJsonStr, params[0]);
+            getForecastDataFromJSON(forecastJsonStr, params[0]);
         } catch (JSONException e) {
             Log.e(LOG_SPAWNER, "error", e);
         }
         return null;
-    }
-
-    @Override
-    protected void onPostExecute(String[] data) {
-        if (data != null) {
-            mForecastAdapter.clear();
-            mForecastAdapter.addAll(data);
-        }
     }
 }

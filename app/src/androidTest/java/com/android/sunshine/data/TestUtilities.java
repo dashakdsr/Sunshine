@@ -1,8 +1,10 @@
 package com.android.sunshine.data;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -67,29 +69,31 @@ public class TestUtilities extends AndroidTestCase {
     static ContentValues createNorthPoleLocationValues() {
         // Create a new map of values, where column names are the keys
         ContentValues testValues = new ContentValues();
-        testValues.put(WeatherContract.LocationEntry.COLUMN_LOC_SETTING, TEST_LOCATION);
-        testValues.put(WeatherContract.LocationEntry.COLUMN_LOC_NAME, "North Pole");
-        testValues.put(WeatherContract.LocationEntry.COLUMN_LOC_LAT, 64.7488);
-        testValues.put(WeatherContract.LocationEntry.COLUMN_LOC_LON, -147.353);
+        testValues.put(WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING, TEST_LOCATION);
+        testValues.put(WeatherContract.LocationEntry.COLUMN_CITY_NAME, "North Pole");
+        testValues.put(WeatherContract.LocationEntry.COLUMN_COORD_LAT, 64.7488);
+        testValues.put(WeatherContract.LocationEntry.COLUMN_COORD_LONG, -147.353);
 
         return testValues;
     }
 
-    static ContentValues createNorthPoleWeatherValues() {
-        // Create a new map of values, where column names are the keys
-        ContentValues testValues = new ContentValues();
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_LOC_KEY, 0);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_DATE, 0);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID, 0);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_SHORT_DESC, "SKY IS OVER");
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_DEGREES, 0);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_HUMIDITY, 100);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP, 10);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP, 9);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_WIND_SPEED, 2000);
-        testValues.put(WeatherContract.WeatherEntry.COLUMN_PRESSURE, 2001);
+    /*
+        Students: You can uncomment this function once you have finished creating the
+        LocationEntry part of the WeatherContract as well as the WeatherDbHelper.
+     */
+    static long insertNorthPoleLocationValues(Context context) {
+        // insert our test records into the database
+        WeatherDbHelper dbHelper = new WeatherDbHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues testValues = TestUtilities.createNorthPoleLocationValues();
 
-        return testValues;
+        long locationRowId;
+        locationRowId = db.insert(WeatherContract.LocationEntry.TABLE_NAME, null, testValues);
+
+        // Verify we got a row back.
+        assertTrue("Error: Failure to insert North Pole Location Values", locationRowId != -1);
+
+        return locationRowId;
     }
 
     /*

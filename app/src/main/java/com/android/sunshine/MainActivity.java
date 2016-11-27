@@ -14,14 +14,33 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    private String mLocation;
+    private final String FORECASTFRAGMENT_TAG = "#FFTag";
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pattern_useless);
         if (savedInstanceState == null) {
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.activity_useless, new ForecastFragment())
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.activity_useless, new ForecastFragment(), FORECASTFRAGMENT_TAG)
                     .commit();
+        }
+        SharedPreferences sharedPreferences
+                = PreferenceManager.getDefaultSharedPreferences(this);
+        mLocation = sharedPreferences.getString(
+                getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(Utility.getPreferredLocation(this) != mLocation)
+        {
+            ForecastFragment ff = (ForecastFragment)getSupportFragmentManager().findFragmentByTag(FORECASTFRAGMENT_TAG);
+            ff.onLocationChanged();
+            mLocation = Utility.getPreferredLocation(this);
         }
     }
 
@@ -37,19 +56,14 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_show_on_map:
-                SharedPreferences sharedPreferences
-                        = PreferenceManager.getDefaultSharedPreferences(this);
-                String location = sharedPreferences.getString(
-                        getString(R.string.pref_location_key),
-                        getString(R.string.pref_location_default));
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(Uri.parse("geo:0,0?").buildUpon()
-                        .appendQueryParameter("q", location)
+                        .appendQueryParameter("q", mLocation)
                         .build());
                 if (intent.resolveActivity(getPackageManager()) != null) {
                     startActivity(intent);
                 } else {
-                    Log.v("Show on map", "Could not open " + location + " on a map!");
+                    Log.v("Show on map", "Could not open " + mLocation + " on a map!");
                 }
                 return true;
             case R.id.menu_settings:

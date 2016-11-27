@@ -25,21 +25,31 @@ import com.android.sunshine.data.WeatherContract.WeatherEntry;
 /**
  * Manages a local database for weather data.
  */
-class WeatherDbHelper extends SQLiteOpenHelper {
+public class WeatherDbHelper extends SQLiteOpenHelper {
 
     // If you change the database schema, you must increment the database version.
     private static final int DATABASE_VERSION = 2;
 
     static final String DATABASE_NAME = "weather.db";
 
-    WeatherDbHelper(Context context) {
+    public WeatherDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
+        // Create a table to hold locations.  A location consists of the string supplied in the
+        // location setting, the city name, and the latitude and longitude
+        final String SQL_CREATE_LOCATION_TABLE = "CREATE TABLE " + LocationEntry.TABLE_NAME + " (" +
+                LocationEntry._ID + " INTEGER PRIMARY KEY," +
+                LocationEntry.COLUMN_LOCATION_SETTING + " TEXT UNIQUE NOT NULL, " +
+                LocationEntry.COLUMN_CITY_NAME + " TEXT NOT NULL, " +
+                LocationEntry.COLUMN_COORD_LAT + " REAL NOT NULL, " +
+                LocationEntry.COLUMN_COORD_LONG + " REAL NOT NULL " +
+                " );";
+
         final String SQL_CREATE_WEATHER_TABLE = "CREATE TABLE " + WeatherEntry.TABLE_NAME + " (" +
-                    // Why AutoIncrement here, and not above?
+                // Why AutoIncrement here, and not above?
                 // Unique keys will be auto-generated in either case.  But for weather
                 // forecasting, it's reasonable to assume the user will want information
                 // for a certain date and all dates *following*, so the forecast data
@@ -69,23 +79,8 @@ class WeatherDbHelper extends SQLiteOpenHelper {
                 " UNIQUE (" + WeatherEntry.COLUMN_DATE + ", " +
                 WeatherEntry.COLUMN_LOC_KEY + ") ON CONFLICT REPLACE);";
 
-//        CREATE TABLE weather( _id INTEGER PRIMARY KEY,
-// date TEXT NOT NULL, min REAL NOT NULL,
-// max REAL NOT NULL, humidity REAL NOT NULL, pressure REAL NOT NULL);
-
-
-
-        final String SQL_CREATE_LOCATION_TABLE = "CREATE TABLE " + LocationEntry.TABLE_NAME
-                + " ( " + LocationEntry._ID + " INTEGER PRIMARY KEY, "
-                + LocationEntry.COLUMN_LOC_NAME + " TEXT NOT NULL, "
-                + LocationEntry.COLUMN_LOC_LAT + " REAL NOT NULL, "
-                + LocationEntry.COLUMN_LOC_LON + " REAL NOT NULL, "
-                + LocationEntry.COLUMN_LOC_SETTING + " TEXT NOT NULL " + " );";
-
         sqLiteDatabase.execSQL(SQL_CREATE_LOCATION_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_WEATHER_TABLE);
-        sqLiteDatabase.execSQL("ALTER TABLE " + LocationEntry.TABLE_NAME + " ADD COLUMN " + "column_example REAL NOT NULL DEFAULT(1.2)");
-
     }
 
     @Override

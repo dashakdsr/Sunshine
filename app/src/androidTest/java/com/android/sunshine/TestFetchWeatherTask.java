@@ -36,10 +36,10 @@ public class TestFetchWeatherTask extends AndroidTestCase{
     public void testAddLocation() {
         // start from a clean state
         getContext().getContentResolver().delete(WeatherContract.LocationEntry.CONTENT_URI,
-                WeatherContract.LocationEntry.COLUMN_LOC_SETTING + " = ?",
+                WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ?",
                 new String[]{ADD_LOCATION_SETTING});
 
-        FetchWeatherTask fwt = new FetchWeatherTask(getContext(), null);
+        FetchWeatherTask fwt = new FetchWeatherTask(getContext());
         long locationId = fwt.addLocation(ADD_LOCATION_SETTING, ADD_LOCATION_CITY,
                 ADD_LOCATION_LAT, ADD_LOCATION_LON);
 
@@ -55,12 +55,12 @@ public class TestFetchWeatherTask extends AndroidTestCase{
                     WeatherContract.LocationEntry.CONTENT_URI,
                     new String[]{
                             WeatherContract.LocationEntry._ID,
-                            WeatherContract.LocationEntry.COLUMN_LOC_SETTING,
-                            WeatherContract.LocationEntry.COLUMN_LOC_NAME,
-                            WeatherContract.LocationEntry.COLUMN_LOC_LAT,
-                            WeatherContract.LocationEntry.COLUMN_LOC_LON
+                            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING,
+                            WeatherContract.LocationEntry.COLUMN_CITY_NAME,
+                            WeatherContract.LocationEntry.COLUMN_COORD_LAT,
+                            WeatherContract.LocationEntry.COLUMN_COORD_LONG
                     },
-                    WeatherContract.LocationEntry.COLUMN_LOC_SETTING + " = ?",
+                    WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ?",
                     new String[]{ADD_LOCATION_SETTING},
                     null);
 
@@ -93,7 +93,7 @@ public class TestFetchWeatherTask extends AndroidTestCase{
         }
         // reset our state back to normal
         getContext().getContentResolver().delete(WeatherContract.LocationEntry.CONTENT_URI,
-                WeatherContract.LocationEntry.COLUMN_LOC_SETTING + " = ?",
+                WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ?",
                 new String[]{ADD_LOCATION_SETTING});
 
         // clean up the test so that other tests can use the content provider
